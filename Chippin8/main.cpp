@@ -15,6 +15,7 @@ int main(int argc, char** argv) {
 	Chippin8* c = new Chippin8();
 	c->opcode_00E0();
 	std::cout << c->display[12][12];
+	
 	delete c;
 	return 0;
 }
