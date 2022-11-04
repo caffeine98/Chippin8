@@ -13,8 +13,16 @@ int main(int argc, char** argv) {
 	std::cout << "Chippin in\n";
 
 	Chippin8* c = new Chippin8();
-	c->opcode_00E0();
-	std::cout << c->display[12][12];
+	c->opcode_00E0();	// Clear screen
+	c->loadROM("D:\\Programming stuff\\CPractice\\IBM_Logo.ch8");
+	c->opcode_DXYN();
+	
+	for (int i = 0; i < DISPLAY_WIDTH; i++) {
+		for (int j = 0; j < DISPLAY_HEIGHT; j++) {
+			std::cout << c->display[i][j] << ", ";
+			if (i % 8 == 0) std::cout << std::endl;
+		}
+	}
 	
 	delete c;
 	return 0;

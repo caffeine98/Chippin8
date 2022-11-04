@@ -10,11 +10,14 @@
 #include <stdint.h>
 #include <string>
 
+#define DISPLAY_WIDTH 64
+#define DISPLAY_HEIGHT 32
+
 class Chippin8 {
 public:
 	/* ----- System components ----- */
 	uint8_t memory[4096];	 // 4KB memory.
-	uint32_t display[64][32];// 64 x 32 pixel display
+	uint32_t display[DISPLAY_WIDTH][DISPLAY_HEIGHT]; // 64 x 32 pixel display
 	uint16_t opcode;		 // Opcode
 	uint8_t pc;				 // Program counter
 	uint16_t index;			 // Index register. Points at locations in memory

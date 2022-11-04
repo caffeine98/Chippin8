@@ -5,6 +5,8 @@
 #include <random>
 #include <chrono>
 #include <iostream>
+#include <stdlib.h>
+#include <time.h>
 
 //CHIP-8 instructions generally start at memory location 0x200
 const unsigned int START_ADDRESS = 0x200;	
@@ -24,6 +26,7 @@ Chippin8::Chippin8() {
 		std::chrono::system_clock::now().time_since_epoch().count()
 	);
 	std::uniform_int_distribution<int> randByte(0, 255U);
+	srand(time(NULL));
 }
 
 Chippin8::~Chippin8() {
@@ -64,8 +67,8 @@ void Chippin8::opcode_0NNN() {
 
 void Chippin8::opcode_00E0() {
 	//Clear screen
-	for (int i = 0; i < 64; i++) {
-		for (int j = 0; j < 32; j++) {
+	for (int i = 0; i < DISPLAY_WIDTH; i++) {
+		for (int j = 0; j < DISPLAY_HEIGHT; j++) {
 			this->display[i][j] = this->display[i][j] & 0;
 		}
 	}
@@ -93,69 +96,130 @@ void Chippin8::opcode_2NNN() {
 }
 
 void Chippin8::opcode_3XNN() {
-
+	// If Vx == NN, skip the next instruction.
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	uint8_t NN = opcode & 0x00FFu;
+	if (registers[Vx] == NN) {
+		pc += 2;
+	}
 }
 
 void Chippin8::opcode_4XNN() {
-
+	// If Vx != NN, skip the next instruction
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	uint8_t NN = opcode & 0x00FFu;
+	if (registers[Vx] != NN) {
+		pc += 2;
+	}
 }
 
 void Chippin8::opcode_5XY0() {
-
+	// If Vx == Vy, skip the next instruction
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4;
+	if (registers[Vx] == registers[Vy]) {
+		pc += 2;
+	}
 }
 
 void Chippin8::opcode_6XNN() {
 	// Set register Vx to NN
 	uint8_t Vx = (opcode & 0x0F00u) >> 8;
-	uint8_t NN = opcode & 0x00ffu;
-	this->registers[Vx] = NN;
+	uint8_t NN = opcode & 0x00FFu;
+	registers[Vx] = NN;
 }
 
 void Chippin8::opcode_7XNN() {
 	// Add to Vx the value NN
 	uint8_t Vx = (opcode & 0x0F00u) >> 8;
-	uint8_t NN = opcode & 0x00ffu;
-	this->registers[Vx] += NN;
+	uint8_t NN = opcode & 0x00FFu;
+	registers[Vx] += NN;
 }
 
 void Chippin8::opcode_8XY0() {
-
+	// Set Vx = Vy
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4;
+	registers[Vx] = registers[Vy];
 }
 
 void Chippin8::opcode_8XY1() {
-
+	// Set Vx to Vx OR Vy
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4;
+	registers[Vx] |= registers[Vy];
 }
 
 void Chippin8::opcode_8XY2() {
-
+	// Set Vx to Vx AND Vy
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4;
+	registers[Vx] &= registers[Vy];
 }
 
 void Chippin8::opcode_8XY3() {
-
+	// Sets Vx to Vx XOR Vy
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4;
+	registers[Vx] ^= registers[Vy];
 }
 
 void Chippin8::opcode_8XY4() {
+	// Add Vx and Vy and store in Vx. Carry is set in VF
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4;
+	registers[Vx] += registers[Vy];
 
+	//Overflow occurs if the the value is greater than 8 bits (255)
+	registers[0xF] = (registers[Vx] > 255) ? 1 : 0;
 }
 
 void Chippin8::opcode_8XY5() {
+	// Subtract Vy from Vx and store in Vx. 
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4;
 
+	// If there is a borrow, VF register is set to 0. Otherwise it is set to 1.
+	registers[0xF] = (registers[Vx] < registers[Vy]) ? 0 : 1;
+	
+	registers[Vx] -= registers[Vy];
 }
 
 void Chippin8::opcode_8XY6() {
+	// Store LSB in VF, then bit-shift Vx to the right by one.
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	registers[0xF] = Vx & 0x01u;
 
+	registers[Vx] >>= 1;
 }
 
 void Chippin8::opcode_8XY7() {
+	// Subtract Vx from Vy and store in Vx
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4;
+	
+	// If there is a borrow, VF register is set to 0. Otherwise it is set to 1.
+	registers[0xF] = (registers[Vy] < registers[Vx]) ? 0 : 1;
 
+	registers[Vx] = registers[Vy] - registers[Vx];
 }
 
 void Chippin8::opcode_8XYE() {
+	// Store MSB in VF, then bit-shift to the left by one.
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	registers[0xF] = (Vx & 0x80u) >> 7;
 
+	registers[Vx] <<= 1;
 }
 
 void Chippin8::opcode_9XY0() {
+	// If Vx != Vy, skip the next instruction
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4;
 
+	if (registers[Vx] != registers[Vy]) {
+		pc += 2;
+	}
 }
 
 void Chippin8::opcode_ANNN() {
@@ -164,27 +228,69 @@ void Chippin8::opcode_ANNN() {
 }
 
 void Chippin8::opcode_BNNN() {
-
+	// Jump to address NNN + V0
+	uint8_t NNN = opcode & 0x0FFFu;
+	this->pc = NNN + registers[0x0];
 }
 
 void Chippin8::opcode_CXNN() {
+	// Set Vx to random number (from 0 to 255) AND NN
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	uint8_t NN = opcode & 0x00FFu;
+	uint8_t random = rand() % 256;
 
+	registers[Vx] = random & NN;
 }
 
+// @TODO: review this code later
 void Chippin8::opcode_DXYN() {
 	// Draw a sprite at coordinate (X, Y), with a width of 8 pixels and height of 
 	// N pixels. Drawing is done by XORing using a mask to set displaybits on or 
 	// off
+
 	uint8_t Vx = (opcode & 0x0F00u) >> 8;
-	uint8_t Vy = (opcode & 0x00F0u) >> 8;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4;
 	const uint8_t width = 8; // Sprite width is guaranteed to be 8 pixels wide
-	uint8_t height = opcode & 0x000Fu;
+	uint8_t height = opcode & 0x000Fu; // Sprite height ranges from 1 to 15
 
+	uint8_t xPosition = registers[Vx] % DISPLAY_WIDTH;
+	uint8_t yPosition = registers[Vy] % DISPLAY_HEIGHT;
 
+	registers[0xF] = 0;
+
+	uint32_t mask[DISPLAY_WIDTH][DISPLAY_HEIGHT];
+	memcpy(mask, this->display, sizeof(mask));
+
+	// Turn on sprite pixels
+	for (int8_t i = 0; i < width; i++) {
+		for (int8_t j = 0; j < height; j++) {
+			mask[Vx + i][Vy + j] = 0xFFFFFFFFu;
+		}
+	}
+
+	// XOR mask and display to tun on required pixels
+	for (int8_t i = 0; i < width; i++) {
+		for (int8_t j = 0; j < height; j++) {
+			if (xPosition + i > (DISPLAY_WIDTH - 1) || yPosition + j > (DISPLAY_HEIGHT - 1)) {
+				break;
+			}
+			uint32_t bit = this->display[xPosition + i][yPosition + j];
+			this->display[xPosition + i][yPosition + j] ^= mask[i][j];
+			// Set VF to 1 if a bit gets set to zero (Note: messy solution, will update)
+			if (bit == 1 && this->display[i][j] == 0) {
+				registers[0xF] = 1;
+			}
+		}
+	}
 }
 
 void Chippin8::opcode_EX9E() {
-
+	// If key Vx is pressed, skip the next instruction
+	uint8_t Vx = (opcode & 0x0F00) >> 8;
+	
+	if (keypad[registers[Vx]]) {
+		pc += 2;
+	}
 }
 
 void Chippin8::opcode_EXA1() {
