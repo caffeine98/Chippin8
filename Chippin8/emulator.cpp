@@ -69,7 +69,7 @@ void Chippin8::opcode_00E0() {
 	//Clear screen
 	for (int i = 0; i < DISPLAY_WIDTH; i++) {
 		for (int j = 0; j < DISPLAY_HEIGHT; j++) {
-			this->display[i][j] = this->display[i][j] & 0;
+			display[i][j] = display[i][j] & 0;
 		}
 	}
 	//memset(this->display, 0, sizeof(display));
@@ -78,13 +78,13 @@ void Chippin8::opcode_00E0() {
 void Chippin8::opcode_00EE() {
 	// To return from a subroutine, we pop the last address from the stack,
 	// subtract one from the stack pointer and set the program counter to it.
-	this->pc = stack[--sp];
+	pc = stack[--sp];
 }
 
 void Chippin8::opcode_1NNN() {
 	// Jump to address NNN by setting the program counter to last 3 bytes of
 	// the opcode. (uint16_t addr = opcode & 0x0FFFu)
-	this->pc = opcode & 0x0FFFu;
+	pc = opcode & 0x0FFFu;
 }
 
 void Chippin8::opcode_2NNN() {
@@ -92,7 +92,7 @@ void Chippin8::opcode_2NNN() {
 	// setting the program counter to NNN.
 	stack[sp] = pc;
 	++sp;
-	this->pc = opcode & 0x0FFFu;
+	pc = opcode & 0x0FFFu;
 }
 
 void Chippin8::opcode_3XNN() {
@@ -224,13 +224,13 @@ void Chippin8::opcode_9XY0() {
 
 void Chippin8::opcode_ANNN() {
 	// Set Index register to NNN
-	this->index = opcode & 0x0FFFu;
+	index = opcode & 0x0FFFu;
 }
 
 void Chippin8::opcode_BNNN() {
 	// Jump to address NNN + V0
 	uint8_t NNN = opcode & 0x0FFFu;
-	this->pc = NNN + registers[0x0];
+	pc = NNN + registers[0x0];
 }
 
 void Chippin8::opcode_CXNN() {
@@ -286,7 +286,7 @@ void Chippin8::opcode_DXYN() {
 
 void Chippin8::opcode_EX9E() {
 	// If key Vx is pressed, skip the next instruction
-	uint8_t Vx = (opcode & 0x0F00) >> 8;
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
 	
 	if (keypad[registers[Vx]]) {
 		pc += 2;
@@ -294,41 +294,88 @@ void Chippin8::opcode_EX9E() {
 }
 
 void Chippin8::opcode_EXA1() {
+	//If key Vx is not pressed, skip the next instruction
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
 
+	if (!keypad[registers[Vx]]) {
+		pc += 2;
+	}
 }
 
 void Chippin8::opcode_FX07() {
-
+	// Set register Vx to the delay timer
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	registers[Vx] = delayTimer;
 }
 
 void Chippin8::opcode_FX0A() {
+	// Wait for a key press and store its value in Vx after receiving it.
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
 
+	// This instruction should block execution, unless it receives a key press.
+	// Waiting can be done by subtracting the program counter. The idea here is 
+	// that, unless a key press is recieved, we do not allow the program 
+	// counter to advance to the next instruction, thus constantly waiting.
+	for (int i = 0; i < sizeof(keypad) / sizeof(keypad[0]); i++) {
+		if (keypad[i]) {
+			registers[Vx] = keypad[i];
+			return;
+		}
+	}
+	pc -= 2;
 }
 
 void Chippin8::opcode_FX15() {
-
+	// Set the delay timer to Vx
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	delayTimer = registers[Vx];
 }
 
 void Chippin8::opcode_FX18() {
-
+	// Set the delay timer to Vx
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	soundTimer = registers[Vx];
 }
 
 void Chippin8::opcode_FX1E() {
-
+	// Add Vx to Index register
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	index += registers[Vx];
 }
 
 void Chippin8::opcode_FX29() {
-
+	// Set the index register to the location of the sprite stored in Vx
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	
+	// Each character is described by 5 bytes, so there is an offset of 5 for 
+	// each character
+	index = FONTSET_START_ADDRESS + (registers[Vx] * 5);
 }
 
 void Chippin8::opcode_FX33() {
+	// Store BCD representation of Vx
+	// Vx[hundreds] at I, Vx[Tens] at I+1, Vx[Ones] at I+2
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
 
+	memory[index] = (registers[Vx] / 100) % 10;
+	memory[index + 1] = (registers[Vx] / 10) % 10;
+	memory[index + 2] = registers[Vx] % 10;
 }
 
 void Chippin8::opcode_FX55() {
-
+	// Store to memory values from V0 to Vx
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
+	
+	for (int i = 0; i <= Vx; ++i) {
+		memory[index + i] = registers[i];
+	}
 }
 
 void Chippin8::opcode_FX65() {
+	// Fill registers V0 to Vx values from memory
+	uint8_t Vx = (opcode & 0x0F00u) >> 8;
 
+	for (int i = 0; i < Vx; ++i) {
+		registers[i] = memory[index + i];
+	}
 }
