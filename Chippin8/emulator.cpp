@@ -2,8 +2,6 @@
 #include "fonts.h"
 
 #include <fstream>
-#include <random>
-#include <chrono>
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>
@@ -13,6 +11,7 @@ const unsigned int START_ADDRESS = 0x200;
 const unsigned int FONTSET_START_ADDRESS = 0x000;
 
 Chippin8::Chippin8() {
+	// Set Program Counter starting position
 	this->pc = START_ADDRESS;
 	
 	// Load font in memory
@@ -20,12 +19,7 @@ Chippin8::Chippin8() {
 		this->memory[FONTSET_START_ADDRESS + i] = fontset[i];
 	}
 
-	// Random number generator for CXNN instruction (rand)
-	// Note: Check this code in the future. Maybe C-style rand could be better?
-	std::default_random_engine randGen(
-		std::chrono::system_clock::now().time_since_epoch().count()
-	);
-	std::uniform_int_distribution<int> randByte(0, 255U);
+	// Random number seed for CXNN instruction 
 	srand(time(NULL));
 }
 
@@ -33,7 +27,7 @@ Chippin8::~Chippin8() {
 
 }
 
-void Chippin8::loadROM(std::string filename) {
+void Chippin8::LoadROM(std::string filename) {
 	// Open ROM file in binary mode and move file pointer to end 
 	std::ifstream file(filename, std::ios::binary | std::ios::ate);
 
@@ -52,15 +46,171 @@ void Chippin8::loadROM(std::string filename) {
 			this->memory[START_ADDRESS + i] = buffer[i];
 		}
 
-		// Free buffer
 		delete[] buffer;
 	}
 }
 
-/* ----- Chip-8 Opcodes ----- */
+void Chippin8::Cycle() {
+	// * Fetch
+	// Opcode is 16 bytes, so the first 8 bytes pointed at by the program 
+	// counter in memory, while the next 8 bytes are stored at pc + 1.
+	this->opcode = (memory[pc] << 8) | memory[pc + 1];
+
+	pc += 2;	// Move program counter to the next instruction in memory.
+
+	// * Decode and Execute
+	DecodeAndExecute(opcode);
+
+	// Decrement delayTimer and soundTimer
+	if (delayTimer > 0) { --delayTimer; }
+	if (soundTimer > 0) { --soundTimer; }
+}
+
+void Chippin8::DecodeAndExecute(uint16_t opcode) {
+	switch ((opcode & 0xF000) >> 12) {
+	case 0x0:
+		// Note: no need to decode 0NNN instruction
+		switch ((opcode & 0x000F)) {
+		case 0x0:
+			opcode_00E0();
+			break;
+		case 0xE:
+			opcode_00EE();
+			break;
+		}
+		break;
+	
+	case 0x1:
+		opcode_1NNN();
+		break;
+	
+	case 0x2:
+		opcode_2NNN();
+		break;
+	
+	case 0x3:
+		opcode_3XNN();
+		break;
+	
+	case 0x4:
+		opcode_4XNN();
+		break;
+	
+	case 0x5:
+		opcode_5XY0();
+		break;
+	
+	case 0x6:
+		opcode_6XNN();
+		break;
+	
+	case 0x7:
+		opcode_7XNN();
+		break;
+	
+	case 0x8:
+		switch (opcode & 0x000F) {
+		case 0x0:
+			opcode_8XY0();
+			break;
+		case 0x1:
+			opcode_8XY1();
+			break;
+		case 0x2:
+			opcode_8XY2();
+			break;
+		case 0x3:
+			opcode_8XY3();
+			break;
+		case 0x4: 
+			opcode_8XY4();
+			break;
+		case 0x5:
+			opcode_8XY5();
+			break;
+		case 0x6:
+			opcode_8XY6();
+			break;
+		case 0x7:
+			opcode_8XY7();
+			break;
+		case 0xE:
+			opcode_8XYE();
+			break;
+		}
+		break;
+	
+	case 0x9:
+		opcode_9XY0();
+		break;
+	
+	case 0xA:
+		opcode_ANNN();
+		break;
+	
+	case 0xB:
+		opcode_BNNN();
+		break;
+	
+	case 0xC:
+		opcode_CXNN();
+		break;
+	
+	case 0xD:
+		opcode_DXYN();
+		break;
+	
+	case 0xE:
+		switch (opcode & 0x00FF) {
+		case 0x9E:
+			opcode_EX9E();
+			break;
+		case 0xA1:
+			opcode_EXA1();
+			break;
+		}
+		break;
+	
+	case 0xF:
+		switch (opcode & 0x00FF) {
+		case 0x07:
+			opcode_FX07();
+			break;
+		case 0x0A:
+			opcode_FX0A();
+			break;
+		case 0x15:
+			opcode_FX15();
+			break;
+		case 0x18:
+			opcode_FX18();
+			break;
+		case 0x1E:
+			opcode_FX1E();
+			break;
+		case 0x29:
+			opcode_FX29();
+			break;
+		case 0x33:
+			opcode_FX33();
+			break;
+		case 0x55:
+			opcode_FX55();
+			break;
+		case 0x65:
+			opcode_FX65();
+			break;
+		}
+		break;
+	}
+}
+
+/* ----- CHIP - 8 Instructions ----- */
+
+void Chippin8::opcode_NOP() { /* Do nothing */ }
 
 void Chippin8::opcode_0NNN() {
-	// This Opcode calls machine instructions for th3 RCA 1802. For this 
+	// This Opcode calls machine instructions for the RCA 1802. For this 
 	// emulator, it can remain unimplemented. Most CHIP-8 games do not use this 
 	// instruction anyway.
 }
