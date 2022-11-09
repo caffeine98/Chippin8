@@ -34,13 +34,22 @@ public:
 	/* ----- System Functionality ----- */
 
 	// Load ROM file 
-	void loadROM(std::string filename);
+	void LoadROM(std::string filename);
+
+	// Instruction Cycle (Fetch, Decode, Execute)
+	void Cycle();
+	
+	// Decode opcode and call instruction function
+	void DecodeAndExecute(uint16_t opcode);
 
 	/* ----- CHIP - 8 Instructions ----- */
 	/*
-		Implementing the OpCode table from wikipedia: 
+		Implementing the Opcode table from wikipedia: 
 		https://en.wikipedia.org/wiki/CHIP-8#Opcode_table
 	*/
+
+	// NOP instruction. Does nothing
+	void opcode_NOP();
 
 	// Calls machine code routine (RCA 1802 for COSMAC VIP) at address NNN. 
 	// Not necessary for most ROMs.
@@ -174,7 +183,7 @@ public:
 	void opcode_FX65();
 
 private:
-	uint8_t randNum;
+	
 };
 
 #endif // EMULATOR_H
