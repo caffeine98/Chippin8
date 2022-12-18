@@ -27,7 +27,7 @@ Run the program through the Terminal/Powershell and provide the path of a CHIP-8
 
 # References
 
-I used a variety of sources and leanred a lot while doing this project. Here are some references i used to learn and understand the system and write the emulator
+I used a variety of sources and leanred a lot while doing this project. Here are some references I used to learn and understand the system and write the emulator
 - https://en.wikipedia.org/wiki/CHIP-8
 - https://austinmorlan.com/posts/chip8_emulator/
 - https://tobiasvl.github.io/blog/write-a-chip-8-emulator/
