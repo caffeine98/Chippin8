@@ -43,7 +43,7 @@ namespace fs = std::filesystem;
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define USAGE() do{ \
 		std::cout << "Usage: ./<Chippin8>.exe <ROM_file>.ch8"\
-		<< " [Video Scale (number)] [Cycle Delay {number}]\n"; \
+		<< " [Video Scale (number)] [Cycle Delay (number)]\n"; \
 		} while(0)
 
 // Maximum size is limited to prevent user from creating a ginormous window
