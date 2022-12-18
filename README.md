@@ -33,3 +33,4 @@ I used a variety of sources and leanred a lot while doing this project. Here are
 - https://tobiasvl.github.io/blog/write-a-chip-8-emulator/
 - https://multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
 - https://www.freecodecamp.org/news/creating-your-very-own-chip-8-emulator/ (This is written in Javascript, but the content applies to any language)
+- http://emulator101.com/
