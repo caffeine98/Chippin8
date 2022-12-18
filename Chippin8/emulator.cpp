@@ -5,14 +5,15 @@
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>
+#include <stdint.h>
 
 //CHIP-8 instructions generally start at memory location 0x200
-const unsigned int START_ADDRESS = 0x200;	
-const unsigned int FONTSET_START_ADDRESS = 0x000;
+const uint16_t START_ADDRESS = 0x200;	
+const uint16_t FONTSET_START_ADDRESS = 0x000;
 
 Chippin8::Chippin8() {
 	// Set Program Counter starting position
-	this->pc = START_ADDRESS;
+	pc = START_ADDRESS;
 	
 	// Load font in memory
 	for (int i = 0; i < sizeof(fontset) / sizeof(fontset[0]); i++) {
@@ -21,6 +22,14 @@ Chippin8::Chippin8() {
 
 	// Random number seed for CXNN instruction 
 	srand(time(NULL));
+
+	//Clear Screen initially
+	opcode_00E0();
+
+	// Clear keypad input values
+	for (int i = 0; i < 16; ++i) {
+		keypad[i] = 0;
+	}
 }
 
 Chippin8::~Chippin8() {
@@ -47,6 +56,20 @@ void Chippin8::LoadROM(std::string filename) {
 		}
 
 		delete[] buffer;
+
+//#define DEBUG_MEMORY_CONTENTS
+#ifdef DEBUG_MEMORY_CONTENTS
+		std::cout << std::hex 
+			<< "-- Start of fonts (0x" << FONTSET_START_ADDRESS << ") --";
+		for (long i = 0; i < (long)size + 0x200; ++i) {
+			if (i % 8 == 0) std::cout << std::endl;
+			if (i == 0x200) std::cout << std::hex 
+				<< "-- Start of ROM (0x" << START_ADDRESS << ") --\n";
+			std::cout << std::hex << i << "\t" << (int)memory[i] 
+				<< std::dec << " ";
+		}
+		std::cout << "\n-- End of ROM --\n";
+#endif // DEBUG_MEMORY_CONTENTS
 	}
 }
 
@@ -55,7 +78,7 @@ void Chippin8::Cycle() {
 	// Opcode is 16 bytes, so the first 8 bytes pointed at by the program 
 	// counter in memory, while the next 8 bytes are stored at pc + 1.
 	this->opcode = (memory[pc] << 8) | memory[pc + 1];
-
+	//std::cout << std::hex << opcode << '\n' << std::dec;
 	pc += 2;	// Move program counter to the next instruction in memory.
 
 	// * Decode and Execute
@@ -66,107 +89,114 @@ void Chippin8::Cycle() {
 	if (soundTimer > 0) { --soundTimer; }
 }
 
+//#define DEBUG_DECODE_AND_EXECUTE
+#ifdef DEBUG_DECODE_AND_EXECUTE
+#define RUN_OPCODE(x) do{x(); std::cout << #x << "\n";} while(0)
+#else
+#define RUN_OPCODE(x) x()
+#endif // DEBUG_DECODE_AND_EXECUTE
+
 void Chippin8::DecodeAndExecute(uint16_t opcode) {
 	switch ((opcode & 0xF000) >> 12) {
 	case 0x0:
 		// Note: no need to decode 0NNN instruction
 		switch ((opcode & 0x000F)) {
 		case 0x0:
-			opcode_00E0();
+			RUN_OPCODE(opcode_00E0);
 			break;
 		case 0xE:
-			opcode_00EE();
+			RUN_OPCODE(opcode_00EE);
 			break;
 		}
 		break;
 	
 	case 0x1:
-		opcode_1NNN();
+		RUN_OPCODE(opcode_1NNN);
 		break;
 	
 	case 0x2:
-		opcode_2NNN();
+		RUN_OPCODE(opcode_2NNN);
 		break;
 	
 	case 0x3:
-		opcode_3XNN();
+		RUN_OPCODE(opcode_3XNN);
 		break;
 	
 	case 0x4:
-		opcode_4XNN();
+		RUN_OPCODE(opcode_4XNN);
 		break;
 	
 	case 0x5:
-		opcode_5XY0();
+		RUN_OPCODE(opcode_5XY0);
 		break;
 	
 	case 0x6:
-		opcode_6XNN();
+		RUN_OPCODE(opcode_6XNN);
 		break;
 	
 	case 0x7:
-		opcode_7XNN();
+		RUN_OPCODE(opcode_7XNN);
 		break;
 	
 	case 0x8:
 		switch (opcode & 0x000F) {
 		case 0x0:
-			opcode_8XY0();
+			RUN_OPCODE(opcode_8XY0);
 			break;
 		case 0x1:
-			opcode_8XY1();
+			RUN_OPCODE(opcode_8XY1);
 			break;
 		case 0x2:
-			opcode_8XY2();
+			RUN_OPCODE(opcode_8XY2);
 			break;
 		case 0x3:
-			opcode_8XY3();
+			RUN_OPCODE(opcode_8XY3);
 			break;
 		case 0x4: 
-			opcode_8XY4();
+			RUN_OPCODE(opcode_8XY4);
 			break;
 		case 0x5:
-			opcode_8XY5();
+			RUN_OPCODE(opcode_8XY5);
 			break;
 		case 0x6:
-			opcode_8XY6();
+			RUN_OPCODE(opcode_8XY6);
 			break;
 		case 0x7:
-			opcode_8XY7();
+			RUN_OPCODE(opcode_8XY7);
 			break;
 		case 0xE:
-			opcode_8XYE();
+			RUN_OPCODE(opcode_8XYE);
 			break;
 		}
 		break;
 	
 	case 0x9:
-		opcode_9XY0();
+		RUN_OPCODE(opcode_9XY0);
 		break;
 	
 	case 0xA:
-		opcode_ANNN();
+		RUN_OPCODE(opcode_ANNN);
 		break;
 	
 	case 0xB:
-		opcode_BNNN();
+		RUN_OPCODE(opcode_BNNN);
 		break;
 	
 	case 0xC:
-		opcode_CXNN();
+		RUN_OPCODE(opcode_CXNN);
 		break;
 	
 	case 0xD:
-		opcode_DXYN();
+		RUN_OPCODE(opcode_DXYN);
 		break;
 	
 	case 0xE:
 		switch (opcode & 0x00FF) {
 		case 0x9E:
-			opcode_EX9E();
+			RUN_OPCODE(opcode_EX9E);
 			break;
 		case 0xA1:
-			opcode_EXA1();
+			RUN_OPCODE(opcode_EXA1);
 			break;
 		}
 		break;
@@ -174,34 +204,36 @@ void Chippin8::DecodeAndExecute(uint16_t opcode) {
 	case 0xF:
 		switch (opcode & 0x00FF) {
 		case 0x07:
-			opcode_FX07();
+			RUN_OPCODE(opcode_FX07);
 			break;
 		case 0x0A:
-			opcode_FX0A();
+			RUN_OPCODE(opcode_FX0A);
 			break;
 		case 0x15:
-			opcode_FX15();
+			RUN_OPCODE(opcode_FX15);
 			break;
 		case 0x18:
-			opcode_FX18();
+			RUN_OPCODE(opcode_FX18);
 			break;
 		case 0x1E:
-			opcode_FX1E();
+			RUN_OPCODE(opcode_FX1E);
 			break;
 		case 0x29:
-			opcode_FX29();
+			RUN_OPCODE(opcode_FX29);
 			break;
 		case 0x33:
-			opcode_FX33();
+			RUN_OPCODE(opcode_FX33);
 			break;
 		case 0x55:
-			opcode_FX55();
+			RUN_OPCODE(opcode_FX55);
 			break;
 		case 0x65:
-			opcode_FX65();
+			RUN_OPCODE(opcode_FX65);
 			break;
 		}
 		break;
+
+	default: RUN_OPCODE(opcode_NOP); break;
 	}
 }
 
@@ -211,18 +243,15 @@ void Chippin8::opcode_NOP() { /* Do nothing */ }
 
 void Chippin8::opcode_0NNN() {
 	// This Opcode calls machine instructions for the RCA 1802. For this 
-	// emulator, it can remain unimplemented. Most CHIP-8 games do not use this 
+	// emulator, it can remain unimplemented. Most CHIP-8 games do not use this
 	// instruction anyway.
 }
 
 void Chippin8::opcode_00E0() {
 	//Clear screen
-	for (int i = 0; i < DISPLAY_WIDTH; i++) {
-		for (int j = 0; j < DISPLAY_HEIGHT; j++) {
-			display[i][j] = display[i][j] & 0;
-		}
+	for (int i = 0; i < DISPLAY_WIDTH * DISPLAY_HEIGHT; i++) {
+		display[i] = 0;
 	}
-	//memset(this->display, 0, sizeof(display));
 }
 
 void Chippin8::opcode_00EE() {
@@ -408,27 +437,28 @@ void Chippin8::opcode_DXYN() {
 
 	registers[0xF] = 0;
 
-	uint32_t mask[DISPLAY_WIDTH][DISPLAY_HEIGHT];
-	memcpy(mask, this->display, sizeof(mask));
+	// Iterate through the sprite pixels. Note that "index" will point to the 
+	// the location of the sprite values in memory
+	for (int i = 0; i < height; i++) {
+		uint8_t sprite = memory[index + i];
 
-	// Turn on sprite pixels
-	for (int8_t i = 0; i < width; i++) {
-		for (int8_t j = 0; j < height; j++) {
-			mask[Vx + i][Vy + j] = 0xFFFFFFFFu;
-		}
-	}
+		for (int j = 0; j < width; j++) {
+			// (0x80u >> j) scans through the width of the pixels at every
+			// iteration. It is ANDed with the value of sprite to get the 
+			// value of the pixel
+			uint8_t spritePixel = sprite & (0x80u >> j); 
+			
+			uint32_t* screenPixel 
+				= &display[(yPosition + i) * DISPLAY_WIDTH + (xPosition + j)];
 
-	// XOR mask and display to tun on required pixels
-	for (int8_t i = 0; i < width; i++) {
-		for (int8_t j = 0; j < height; j++) {
-			if (xPosition + i > (DISPLAY_WIDTH - 1) || yPosition + j > (DISPLAY_HEIGHT - 1)) {
-				break;
-			}
-			uint32_t bit = this->display[xPosition + i][yPosition + j];
-			this->display[xPosition + i][yPosition + j] ^= mask[i][j];
-			// Set VF to 1 if a bit gets set to zero (Note: messy solution, will update)
-			if (bit == 1 && this->display[i][j] == 0) {
-				registers[0xF] = 1;
+			if (spritePixel) {
+				// If a collision occurs between the sprite pixel and screen 
+				// pixel, set register VF to 1
+				if ((*screenPixel) == 0xFFFFFFFF) {
+					registers[0xF] = 1;
+				}
+				// XOR sprite pixel with screen pixel
+				*screenPixel ^= 0xFFFFFFFF;
 			}
 		}
 	}
@@ -463,7 +493,7 @@ void Chippin8::opcode_FX0A() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8;
 
 	// This instruction should block execution, unless it receives a key press.
-	// Waiting can be done by subtracting the program counter. The idea here is 
+	// Waiting can be done by subtracting the program counter. The idea here is
 	// that, unless a key press is recieved, we do not allow the program 
 	// counter to advance to the next instruction, thus constantly waiting.
 	for (int i = 0; i < sizeof(keypad) / sizeof(keypad[0]); i++) {

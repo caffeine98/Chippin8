@@ -1,7 +1,5 @@
 /*
-	Chippin8 - A Chip-8 emulator
-	Here, we will define the system's components, using internet resources as 
-	a guide
+	All the components and functionalities of the emulator are declared here
 */
 
 #ifndef EMULATOR_H
@@ -15,21 +13,21 @@
 
 class Chippin8 {
 public:
-	/* ----- System components ----- */
-	uint8_t memory[4096];	 // 4KB memory.
-	uint32_t display[DISPLAY_WIDTH][DISPLAY_HEIGHT]; // 64 x 32 pixel display
-	uint16_t opcode;		 // Opcode
-	uint8_t pc;				 // Program counter
-	uint16_t index;			 // Index register. Points at locations in memory
-	uint8_t registers[16];	 // 16 8-bit registers (V0 - VF)
-	uint16_t stack[16];		 // Stack for storing 16-bit addresses
-	uint8_t sp;				 // Stack pointer
-	uint8_t delayTimer;		 // Used for timing events of games
-	uint8_t soundTimer;		 // Used for sound effects. Beeps at non-zero values
-	uint8_t keypad[16];		 // Store keypad values
-
 	Chippin8();
 	~Chippin8();
+
+	/* ----- System components ----- */
+	uint8_t memory[4096];	// 4KB memory.
+	uint32_t display[DISPLAY_WIDTH * DISPLAY_HEIGHT]; // 64 x 32 pixel display
+	uint16_t opcode;		// Opcode
+	uint16_t pc;			// Program counter
+	uint16_t index;			// Index register. Points at locations in memory
+	uint8_t registers[16];	// 16 8-bit registers (V0 - VF)
+	uint16_t stack[16];		// Stack for storing 16-bit addresses
+	uint8_t sp;				// Stack pointer
+	uint8_t delayTimer;		// Used for timing events of games
+	uint8_t soundTimer;		// Used for sound effects. Beeps at non-zero values
+	uint8_t keypad[16];		// Store keypad values
 
 	/* ----- System Functionality ----- */
 
@@ -41,6 +39,8 @@ public:
 	
 	// Decode opcode and call instruction function
 	void DecodeAndExecute(uint16_t opcode);
+
+private:
 
 	/* ----- CHIP - 8 Instructions ----- */
 	/*
@@ -181,8 +181,6 @@ public:
 	// address I. The offset from I is increased by 1 for each value read, but 
 	// I itself is left unmodified.
 	void opcode_FX65();
-
-private:
 	
 };
 
