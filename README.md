@@ -12,7 +12,7 @@ Z | X | C | V
 
 # Dependencies
 
-Chippin8 uses the SDL2 library to render graphics to the screen as well, handle keyboard inputs as well as set the frame rate of the display. 
+Chippin8 uses the SDL2 library to render graphics to the screen, handle keyboard inputs, as well as set the frame rate of the display. 
 
 # Build
 
