@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
 	int videoScale = 10;		// Default value
 	uint32_t cycleDelay = 5;	// Default value
 
-	if (argc == 1) {
+	if (argc == 1 || argc > 4) {
 		USAGE();
 		return EXIT_FAILURE;
 	}
