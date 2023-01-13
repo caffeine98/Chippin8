@@ -555,7 +555,7 @@ void Chippin8::opcode_FX65() {
 	// Fill registers V0 to Vx values from memory
 	uint8_t Vx = (opcode & 0x0F00u) >> 8;
 
-	for (int i = 0; i < Vx; ++i) {
+	for (int i = 0; i <= Vx; ++i) {
 		registers[i] = memory[index + i];
 	}
 }
