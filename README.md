@@ -24,6 +24,10 @@ Run the program through the Terminal/Powershell and provide the path of a CHIP-8
 ```
 ./<Chippin8>.exe <ROM_file>.ch8 [Video Scale (number)] [Cycle Delay (number)]
 ```
+# Screenshots
+![screenshotIBM](https://user-images.githubusercontent.com/49334026/220876075-e9735ca0-f091-4bb0-99e1-3cd08d86bb45.png)
+![screenshotSoccer](https://user-images.githubusercontent.com/49334026/220876088-5b0be5c8-c3e2-46a6-8058-012084dd78da.png)
+
 
 # References
 
